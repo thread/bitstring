@@ -12,12 +12,12 @@ import copy
 
 class ModuleData(unittest.TestCase):
     def testVersion(self):
-        self.assertEqual(bitstring.__version__, '3.1.3')
+        self.assertEqual(bitstring.__version__, '3.2.0')
 
     def testAll(self):
         exported = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
                     'Bits', 'BitString', 'pack', 'Error', 'ReadError',
-                    'InterpretError', 'ByteAlignError', 'CreationError', 'bytealigned']
+                    'InterpretError', 'ByteAlignError', 'CreationError', 'settings']
         self.assertEqual(set(bitstring.__all__), set(exported))
 
     def testReverseDict(self):
@@ -30,6 +30,9 @@ class ModuleData(unittest.TestCase):
     def testAliases(self):
         self.assertTrue(bitstring.Bits is bitstring.ConstBitArray)
         self.assertTrue(bitstring.BitStream is bitstring.BitString)
+
+    def testPurePython(self):
+        self.assertTrue(bitstring.__pure__)
 
 
 class MemoryUsage(unittest.TestCase):
@@ -91,7 +94,3 @@ class Interning(unittest.TestCase):
         b = bitstring.ConstBitStream('0b11000')
         self.assertFalse(a is b)
     #        self.assertTrue(a._datastore is b._datastore)
-        
-        
-        
-        
