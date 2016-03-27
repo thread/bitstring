@@ -3,7 +3,7 @@
 from distutils.core import setup
 from distutils.extension import Extension
 
-use_cython = True # Set to True if you want to build from Cython source yourself
+use_cython = False # Set to True if you want to build from Cython source yourself
 
 if use_cython:
     from Cython.Distutils import build_ext
@@ -14,9 +14,8 @@ import sys
 
 kwds = {'long_description': open('README.rst').read()}
 
-if sys.version_info[:2] < (2, 6):
-    raise Exception('This version of bitstring needs Python 2.6 or later. '
-                    'For Python 2.4 / 2.5 please use bitstring version 1.0 instead.')
+if sys.version_info[:2] < (2, 7):
+    raise Exception('This version of bitstring needs Python 2.7 or Python 3.x.')
 
 macros = [('PYREX_WITHOUT_ASSERTIONS', None)]
 cmdclass = {}
@@ -45,11 +44,8 @@ setup(name='bitstring',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.0',
-        'Programming Language :: Python :: 3.1',
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
