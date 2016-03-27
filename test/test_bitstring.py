@@ -22,7 +22,7 @@ class ModuleData(unittest.TestCase):
     def testAll(self):
         exported = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
                     'Bits', 'BitString', 'pack', 'Error', 'ReadError',
-                    'InterpretError', 'ByteAlignError', 'CreationError', 'bytealigned']
+                    'InterpretError', 'ByteAlignError', 'CreationError', 'Settings']
         self.assertEqual(set(bitstring.__all__), set(exported))
 
     def testReverseDict(self):

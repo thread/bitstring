@@ -73,4 +73,4 @@ except ImportError:
 
 __all__ = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
            'Bits', 'BitString', 'pack', 'Error', 'ReadError',
-           'InterpretError', 'ByteAlignError', 'CreationError', 'bytealigned']
+           'InterpretError', 'ByteAlignError', 'CreationError', 'Settings']

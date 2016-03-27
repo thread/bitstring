@@ -18,14 +18,25 @@ import array
 
 byteorder = sys.byteorder
 
-bytealigned = False
-"""Determines whether a number of methods default to working only on byte boundaries."""
-
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS = 250
 
 # Maximum size of caches used for speed optimisations.
 CACHE_SIZE = 1000
+
+class _Settings(object):
+    """Container for module-wide settings. This class is private,
+    and the instance below is used to get / set settings."""
+    def setbytealigned(self, val):
+        self._bytealigned = val
+    def getbytealigned(self):
+        return self._bytealigned
+    bytealigned = property(getbytealigned, setbytealigned)
+
+Settings = _Settings()
+
+"""Determines whether a number of methods default to working only on byte boundaries."""
+Settings.bytealigned = False
 
 class Error(Exception):
     """Base class for errors in the bitstring module."""
@@ -2375,7 +2386,7 @@ class Bits(object):
             raise ValueError("Cannot find an empty bitstring.")
         start, end = self._validate_slice(start, end)
         if bytealigned is None:
-            bytealigned = globals()['bytealigned']
+            bytealigned = Settings.bytealigned
         if bytealigned and not bs.len % 8 and not self._datastore.offset:
             p = self._findbytes(bs.bytes, start, end, bytealigned)
         else:
@@ -2409,7 +2420,7 @@ class Bits(object):
         bs = Bits(bs)
         start, end = self._validate_slice(start, end)
         if bytealigned is None:
-            bytealigned = globals()['bytealigned']
+            bytealigned = Settings.bytealigned
         c = 0
         if bytealigned and not bs.len % 8 and not self._datastore.offset:
             # Use the quick find method
@@ -2460,7 +2471,7 @@ class Bits(object):
         bs = Bits(bs)
         start, end = self._validate_slice(start, end)
         if bytealigned is None:
-            bytealigned = globals()['bytealigned']
+            bytealigned = Settings.bytealigned
         if not bs.len:
             raise ValueError("Cannot find an empty bitstring.")
         # Search chunks starting near the end and then moving back
@@ -2528,7 +2539,7 @@ class Bits(object):
             raise ValueError("split delimiter cannot be empty.")
         start, end = self._validate_slice(start, end)
         if bytealigned is None:
-            bytealigned = globals()['bytealigned']
+            bytealigned = Settings.bytealigned
         if count is not None and count < 0:
             raise ValueError("Cannot split - count must be >= 0.")
         if count == 0:
@@ -3263,7 +3274,7 @@ class BitArray(Bits):
             raise ValueError("Empty bitstring cannot be replaced.")
         start, end = self._validate_slice(start, end)
         if bytealigned is None:
-            bytealigned = globals()['bytealigned']
+            bytealigned = Settings.bytealigned
         # Adjust count for use in split()
         if count is not None:
             count += 1
@@ -4180,4 +4191,4 @@ BitString = BitStream
 
 __all__ = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
            'Bits', 'BitString', 'pack', 'Error', 'ReadError',
-           'InterpretError', 'ByteAlignError', 'CreationError', 'bytealigned']
+           'InterpretError', 'ByteAlignError', 'CreationError', 'Settings']
