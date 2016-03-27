@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-import sys
+from distutils.extension import Extension
 
+use_cython = True # Set to True if you want to build from Cython source yourself
+
+if use_cython:
+    from Cython.Distutils import build_ext
+else:
+    from distutils.command import build_ext
+
+import sys
 
 kwds = {'long_description': open('README.rst').read()}
 
@@ -10,15 +18,27 @@ if sys.version_info[:2] < (2, 6):
     raise Exception('This version of bitstring needs Python 2.6 or later. '
                     'For Python 2.4 / 2.5 please use bitstring version 1.0 instead.')
 
+macros = [('PYREX_WITHOUT_ASSERTIONS', None)]
+cmdclass = {}
+if use_cython:
+    print("Compiling with Cython")
+    ext_modules = [Extension('_cbitstring', ["_cbitstring.pyx"], define_macros=macros)]
+    cmdclass.update({'build_ext': build_ext})
+else:
+    ext_modules = [Extension('_cbitstring', ['_cbitstring.c'])]
+
+
 setup(name='bitstring',
-      version='3.1.4',
+      version='3.2.0',
       description='Simple construction, analysis and modification of binary data.',
       author='Scott Griffiths',
       author_email='dr.scottgriffiths@gmail.com',
       url='https://github.com/scott-griffiths/bitstring',
       download_url='https://pypi.python.org/pypi/bitstring/',
       license='The MIT License: http://www.opensource.org/licenses/mit-license.php',
-      py_modules=['bitstring'],
+      cmdclass = cmdclass,
+      ext_modules = ext_modules,
+      py_modules=['bitstring', '_pybitstring'],
       platforms='all',
       classifiers = [
         'Development Status :: 5 - Production/Stable',
