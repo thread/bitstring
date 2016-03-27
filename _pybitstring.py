@@ -15,9 +15,6 @@ import operator
 import collections
 import array
 
-__all__ = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
-           'Bits', 'BitString', 'pack', 'Error', 'ReadError',
-           'InterpretError', 'ByteAlignError', 'CreationError', 'bytealigned']
 
 byteorder = sys.byteorder
 

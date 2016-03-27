@@ -9,6 +9,11 @@ sys.path.insert(0, '..')
 import bitstring
 import copy
 
+try:
+    from _cbitstring import BYTE_REVERSAL_DICT
+except ImportError:
+    from _pybitstring import BYTE_REVERSAL_DICT
+
 
 class ModuleData(unittest.TestCase):
     def testVersion(self):
@@ -21,7 +26,7 @@ class ModuleData(unittest.TestCase):
         self.assertEqual(set(bitstring.__all__), set(exported))
 
     def testReverseDict(self):
-        d = bitstring.BYTE_REVERSAL_DICT
+        d = BYTE_REVERSAL_DICT
         for i in range(256):
             a = bitstring.Bits(uint=i, length=8)
             b = d[i]

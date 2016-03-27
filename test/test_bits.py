@@ -6,8 +6,13 @@ import sys
 sys.path.insert(0, '..')
 import bitstring
 import array
-from bitstring import MmapByteArray
-from bitstring import Bits, BitArray, ConstByteStore, ByteStore
+
+try:
+    from _cbitstring import MmapByteArray, ConstByteStore, ByteStore
+except ImportError:
+    from _pybitstring import MmapByteArray, ConstByteStore, ByteStore
+
+from bitstring import Bits, BitArray
 
 class Creation(unittest.TestCase):
     def testCreationFromBytes(self):
@@ -137,7 +142,7 @@ class Creation(unittest.TestCase):
 
     def testDataStoreType(self):
         a = Bits('0xf')
-        self.assertEqual(type(a._datastore), bitstring.ConstByteStore)
+        self.assertEqual(type(a._datastore), ConstByteStore)
 
 
 class Initialisation(unittest.TestCase):
