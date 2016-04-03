@@ -3,7 +3,7 @@
 from distutils.core import setup
 from distutils.extension import Extension
 
-use_cython = False # Set to True if you want to build from Cython source yourself
+use_cython = True # Set to True if you want to build from Cython source yourself
 
 if use_cython:
     from Cython.Distutils import build_ext
@@ -21,10 +21,12 @@ macros = [('PYREX_WITHOUT_ASSERTIONS', None)]
 cmdclass = {}
 if use_cython:
     print("Compiling with Cython")
-    ext_modules = [Extension('_cbitstring', ["_cbitstring.pyx"], define_macros=macros)]
+    ext_modules = [Extension('_cbitstring', ["_cbitstring.pyx"], define_macros=macros),
+                   Extension('_bytestore', ["_bytestore.pyx"], define_macros=macros)]
     cmdclass.update({'build_ext': build_ext})
 else:
-    ext_modules = [Extension('_cbitstring', ['_cbitstring.c'])]
+    ext_modules = [Extension('_cbitstring', ['_cbitstring.c']),
+                   Extension('_bytestore', ['_bytestore.c'])]
 
 
 setup(name='bitstring',
