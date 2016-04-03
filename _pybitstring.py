@@ -1,3 +1,4 @@
+# cython: profile=True
 #!/usr/bin/env python
 """
 The pure Python bitstring implementation
@@ -120,7 +121,7 @@ class ConstByteStore(object):
         return eb - sb + 1
 
     def __copy__(self):
-        return ByteStore(self._rawarray[:], self.bitlength, self.offset)
+        return ConstByteStore(self._rawarray[:], self.bitlength, self.offset)
 
     def _appendstore(self, store):
         """Join another store on to the end of this one."""
@@ -1203,7 +1204,7 @@ class Bits(object):
         if isinstance(s, Bits):
             if length is None:
                 length = s.len - offset
-            self._setbytes_unsafe(s._datastore.rawbytes, length, s._offset + offset)
+            self._setbytes_unsafe(s._datastore.rawbytes[:], length, s._offset + offset)
             return
         if isinstance(s, file):
             if offset is None:
@@ -1225,7 +1226,7 @@ class Bits(object):
         if isinstance(s, basestring):
             bs = self._converttobitstring(s)
             assert bs._offset == 0
-            self._setbytes_unsafe(bs._datastore.rawbytes, bs.length, 0)
+            self._setbytes_unsafe(bs._datastore.rawbytes[:], bs.length, 0)
             return
         if isinstance(s, (bytes, bytearray)):
             self._setbytes_unsafe(bytearray(s), len(s) * 8, 0)
@@ -1281,7 +1282,7 @@ class Bits(object):
 
     def _setbytes_unsafe(self, data, length, offset):
         """Unchecked version of _setbytes_safe."""
-        self._datastore = ByteStore(data[:], length, offset)
+        self._datastore = ByteStore(data, length, offset)
         assert self._assertsanity()
 
     def _readbytes(self, length, start):
@@ -1802,11 +1803,7 @@ class Bits(object):
         endbyte = (start + self._offset + length - 1) // 8
         b = self._datastore.getbyteslice(startbyte, endbyte + 1)
         # Convert to a string of '0' and '1's (via a hex string an and int!)
-        try:
-            c = "{:0{}b}".format(int(binascii.hexlify(b), 16), 8*len(b))
-        except TypeError:
-            # Hack to get Python 2.6 working
-            c = "{0:0{1}b}".format(int(binascii.hexlify(str(b)), 16), 8*len(b))
+        c = "{:0{}b}".format(int(binascii.hexlify(b), 16), 8*len(b))
         # Finally chop off any extra bits.
         return c[startoffset:startoffset + length]
 
