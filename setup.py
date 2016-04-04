@@ -18,16 +18,19 @@ if sys.version_info[:2] < (2, 7):
     raise Exception('This version of bitstring needs Python 2.7 or Python 3.x.')
 
 macros = [('PYREX_WITHOUT_ASSERTIONS', None)]
-cmdclass = {}
+
+ext = ".pyx" if use_cython else ".c"
+
+modulenames = ['_cbitstring', '_bytestore']
+ext_modules = [Extension(x, [x + ext], define_macros=macros) for x in modulenames]
+# ext_modules = [Extension('bitstring', ["bitstring.pyx"], define_macros=macros)]
+
+# TODO: define_macros
+
 if use_cython:
     print("Compiling with Cython")
-    ext_modules = [Extension('_cbitstring', ["_cbitstring.pyx"], define_macros=macros),
-                   Extension('_bytestore', ["_bytestore.pyx"], define_macros=macros)]
-    cmdclass.update({'build_ext': build_ext})
-else:
-    ext_modules = [Extension('_cbitstring', ['_cbitstring.c']),
-                   Extension('_bytestore', ['_bytestore.c'])]
-
+    from Cython.Build import cythonize
+    ext_modules = cythonize(ext_modules)
 
 setup(name='bitstring',
       version='3.2.0',
@@ -37,7 +40,6 @@ setup(name='bitstring',
       url='https://github.com/scott-griffiths/bitstring',
       download_url='https://pypi.python.org/pypi/bitstring/',
       license='The MIT License: http://www.opensource.org/licenses/mit-license.php',
-      cmdclass = cmdclass,
       ext_modules = ext_modules,
       py_modules=['bitstring', '_pybitstring'],
       platforms='all',

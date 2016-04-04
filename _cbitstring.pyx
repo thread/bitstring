@@ -1,5 +1,5 @@
-# cython: profile=True
-#!/usr/bin/env python
+#!python
+#cython: language_level=2, profile=True
 """
 The Cython bitstring implementation
 """

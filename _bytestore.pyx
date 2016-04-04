@@ -1,3 +1,6 @@
+#!python
+#cython: language_level=2, profile=True
+
 import copy
 
 class ConstByteStore(object):
