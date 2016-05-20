@@ -4,9 +4,9 @@ import unittest
 import sys
 sys.path.insert(0, '..')
 try:
-    from _cbitstring import ByteStore, ConstByteStore, equal, offsetcopy
+    from _cbitstring import ByteStore, equal, offsetcopy
 except ImportError:
-    from _pybitstring import ByteStore, ConstByteStore, equal, offsetcopy
+    from _pybitstring import ByteStore, equal, offsetcopy
 
 
 class OffsetCopy(unittest.TestCase):

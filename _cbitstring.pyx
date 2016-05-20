@@ -16,7 +16,7 @@ import operator
 import collections
 import array
 
-from _bytestore import ConstByteStore, ByteStore, offsetcopy
+from _bytestore import ByteStore, offsetcopy
 
 byteorder = sys.byteorder
 
@@ -575,7 +575,7 @@ class Bits(object):
                         _, tokens = tokenparser(auto)
                     except ValueError as e:
                         raise CreationError(*e.args)
-                    x._datastore = ConstByteStore(bytearray(0), 0, 0)
+                    x._datastore = ByteStore(bytearray(0), 0, 0, True)
                     for token in tokens:
                         x._datastore._appendstore(Bits._init_with_token(*token)._datastore)
                     assert x._assertsanity()
@@ -1058,7 +1058,7 @@ class Bits(object):
             if length + byteoffset * 8 + offset > m.filelength * 8:
                 raise CreationError("File is not long enough for specified "
                                     "length and offset.")
-            self._datastore = ConstByteStore(m, length, offset)
+            self._datastore = ByteStore(m, length, offset, True)
             return
         if length is not None:
             raise CreationError("The length keyword isn't applicable to this initialiser.")
@@ -1103,7 +1103,7 @@ class Bits(object):
         if length + byteoffset * 8 + offset > m.filelength * 8:
             raise CreationError("File is not long enough for specified "
                                 "length and offset.")
-        self._datastore = ConstByteStore(m, length, offset)
+        self._datastore = ByteStore(m, length, offset, True)
 
     def _setbytes_safe(self, data, length=None, offset=0):
         """Set the data from a string."""
@@ -2837,8 +2837,9 @@ class BitArray(Bits):
 
         """
         # For mutable BitArrays we always read in files to memory:
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             self._ensureinmemory()
+        self._datastore.immutable = False
 
     def __new__(cls, auto=None, length=None, offset=None, **kwargs):
         x = super(BitArray, cls).__new__(cls)
@@ -2858,7 +2859,7 @@ class BitArray(Bits):
     def __copy__(self):
         """Return a new copy of the BitArray."""
         s_copy = BitArray()
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             # Let them both point to the same (invariant) array.
             # If either gets modified then at that point they'll be read into memory.
             s_copy._datastore = self._datastore
@@ -3915,8 +3916,9 @@ class BitStream(ConstBitStream, BitArray):
         """
         self._pos = 0
         # For mutable BitStreams we always read in files to memory:
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             self._ensureinmemory()
+        self._datastore.immutable = False
 
     def __new__(cls, auto=None, length=None, offset=None, **kwargs):
         x = super(BitStream, cls).__new__(cls)
@@ -3927,7 +3929,7 @@ class BitStream(ConstBitStream, BitArray):
         """Return a new copy of the BitStream."""
         s_copy = BitStream()
         s_copy._pos = 0
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             # Let them both point to the same (invariant) array.
             # If either gets modified then at that point they'll be read into memory.
             s_copy._datastore = self._datastore

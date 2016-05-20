@@ -3,15 +3,15 @@
 
 import copy
 
-class ConstByteStore(object):
+class ByteStore:
     """Stores raw bytes together with a bit offset and length.
 
     Used internally - not part of public interface.
     """
 
-    __slots__ = ('offset', '_rawarray', 'bitlength')
+    __slots__ = ('offset', '_rawarray', 'bitlength', 'immutable')
 
-    def __init__(self, data, bitlength=None, offset=None):
+    def __init__(self, data, bitlength=None, offset=None, immutable=False):
         """data is either a bytearray or a MmapByteArray"""
         self._rawarray = data
         if offset is None:
@@ -20,6 +20,7 @@ class ConstByteStore(object):
             bitlength = 8 * len(data) - offset
         self.offset = offset
         self.bitlength = bitlength
+        self.immutable = immutable
 
     def getbit(self, pos):
         assert 0 <= pos < self.bitlength
@@ -44,7 +45,7 @@ class ConstByteStore(object):
         return eb - sb + 1
 
     def __copy__(self):
-        return ConstByteStore(self._rawarray[:], self.bitlength, self.offset)
+        return ByteStore(self._rawarray[:], self.bitlength, self.offset)
 
     def _appendstore(self, store):
         """Join another store on to the end of this one."""
@@ -91,30 +92,26 @@ class ConstByteStore(object):
     def rawbytes(self):
         return self._rawarray
 
-
-class ByteStore(ConstByteStore):
-    """Adding mutating methods to ConstByteStore
-
-    Used internally - not part of public interface.
-    """
-    __slots__ = ()
-
     def setbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] |= (128 >> bit)
 
     def unsetbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] &= ~(128 >> bit)
 
     def invertbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] ^= (128 >> bit)
 
     def setbyte(self, pos, value):
+        assert self.immutable is False
         self._rawarray[pos] = value
 
     def setbyteslice(self, start, end, value):

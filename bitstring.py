@@ -70,7 +70,6 @@ except ImportError:
     from _pybitstring import *
     __pure__ = True
 
-
 __all__ = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
            'Bits', 'BitString', 'pack', 'Error', 'ReadError',
            'InterpretError', 'ByteAlignError', 'CreationError', 'Settings']

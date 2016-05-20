@@ -8,9 +8,9 @@ import bitstring
 import array
 
 try:
-    from _cbitstring import MmapByteArray, ConstByteStore, ByteStore
+    from _cbitstring import MmapByteArray, ByteStore
 except ImportError:
-    from _pybitstring import MmapByteArray, ConstByteStore, ByteStore
+    from _pybitstring import MmapByteArray, ByteStore
 
 from bitstring import Bits, BitArray
 
@@ -142,7 +142,8 @@ class Creation(unittest.TestCase):
 
     def testDataStoreType(self):
         a = Bits('0xf')
-        self.assertEqual(type(a._datastore), ConstByteStore)
+        self.assertEqual(type(a._datastore), ByteStore)
+        self.assertTrue(a._datastore.immutable)
 
 
 class Initialisation(unittest.TestCase):
@@ -314,28 +315,28 @@ class LongBoolConversion(unittest.TestCase):
 
 # Some basic tests for the private ByteStore classes
 
-class ConstByteStoreCreation(unittest.TestCase):
+class ByteStoreCreation(unittest.TestCase):
 
     def testProperties(self):
-        a = ConstByteStore(bytearray(b'abc'))
+        a = ByteStore(bytearray(b'abc'))
         self.assertEqual(a.bytelength, 3)
         self.assertEqual(a.offset, 0)
         self.assertEqual(a.bitlength, 24)
         self.assertEqual(a._rawarray, b'abc')
 
     def testGetBit(self):
-        a = ConstByteStore(bytearray([0x0f]))
+        a = ByteStore(bytearray([0x0f]))
         self.assertEqual(a.getbit(0), False)
         self.assertEqual(a.getbit(3), False)
         self.assertEqual(a.getbit(4), True)
         self.assertEqual(a.getbit(7), True)
 
-        b = ConstByteStore(bytearray([0x0f]), 7, 1)
+        b = ByteStore(bytearray([0x0f]), 7, 1)
         self.assertEqual(b.getbit(2), False)
         self.assertEqual(b.getbit(3), True)
 
     def testGetByte(self):
-        a = ConstByteStore(bytearray(b'abcde'), 1, 13)
+        a = ByteStore(bytearray(b'abcde'), 1, 13)
         self.assertEqual(a.getbyte(0), 97)
         self.assertEqual(a.getbyte(1), 98)
         self.assertEqual(a.getbyte(4), 101)

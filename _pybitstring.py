@@ -80,15 +80,15 @@ class CreationError(Error, ValueError):
         Error.__init__(self, *params)
 
 
-class ConstByteStore(object):
+class ByteStore(object):
     """Stores raw bytes together with a bit offset and length.
 
     Used internally - not part of public interface.
     """
 
-    __slots__ = ('offset', '_rawarray', 'bitlength')
+    __slots__ = ('offset', '_rawarray', 'bitlength', 'immutable')
 
-    def __init__(self, data, bitlength=None, offset=None):
+    def __init__(self, data, bitlength=None, offset=None, immutable=False):
         """data is either a bytearray or a MmapByteArray"""
         self._rawarray = data
         if offset is None:
@@ -97,6 +97,7 @@ class ConstByteStore(object):
             bitlength = 8 * len(data) - offset
         self.offset = offset
         self.bitlength = bitlength
+        self.immutable = immutable
 
     def getbit(self, pos):
         assert 0 <= pos < self.bitlength
@@ -121,7 +122,7 @@ class ConstByteStore(object):
         return eb - sb + 1
 
     def __copy__(self):
-        return ConstByteStore(self._rawarray[:], self.bitlength, self.offset)
+        return ByteStore(self._rawarray[:], self.bitlength, self.offset)
 
     def _appendstore(self, store):
         """Join another store on to the end of this one."""
@@ -168,33 +169,30 @@ class ConstByteStore(object):
     def rawbytes(self):
         return self._rawarray
 
-
-class ByteStore(ConstByteStore):
-    """Adding mutating methods to ConstByteStore
-
-    Used internally - not part of public interface.
-    """
-    __slots__ = ()
-
     def setbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] |= (128 >> bit)
 
     def unsetbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] &= ~(128 >> bit)
 
     def invertbit(self, pos):
         assert 0 <= pos < self.bitlength
+        assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] ^= (128 >> bit)
 
     def setbyte(self, pos, value):
+        assert self.immutable is False
         self._rawarray[pos] = value
 
     def setbyteslice(self, start, end, value):
+        assert self.immutable is False
         self._rawarray[start:end] = value
 
 
@@ -734,7 +732,7 @@ class Bits(object):
                         _, tokens = tokenparser(auto)
                     except ValueError as e:
                         raise CreationError(*e.args)
-                    x._datastore = ConstByteStore(bytearray(0), 0, 0)
+                    x._datastore = ByteStore(bytearray(0), 0, 0, True)
                     for token in tokens:
                         x._datastore._appendstore(Bits._init_with_token(*token)._datastore)
                     assert x._assertsanity()
@@ -1217,7 +1215,7 @@ class Bits(object):
             if length + byteoffset * 8 + offset > m.filelength * 8:
                 raise CreationError("File is not long enough for specified "
                                     "length and offset.")
-            self._datastore = ConstByteStore(m, length, offset)
+            self._datastore = ByteStore(m, length, offset, True)
             return
         if length is not None:
             raise CreationError("The length keyword isn't applicable to this initialiser.")
@@ -1262,7 +1260,7 @@ class Bits(object):
         if length + byteoffset * 8 + offset > m.filelength * 8:
             raise CreationError("File is not long enough for specified "
                                 "length and offset.")
-        self._datastore = ConstByteStore(m, length, offset)
+        self._datastore = ByteStore(m, length, offset, True)
 
     def _setbytes_safe(self, data, length=None, offset=0):
         """Set the data from a string."""
@@ -2996,8 +2994,9 @@ class BitArray(Bits):
 
         """
         # For mutable BitArrays we always read in files to memory:
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             self._ensureinmemory()
+        self._datastore.immutable = False;
 
     def __new__(cls, auto=None, length=None, offset=None, **kwargs):
         x = super(BitArray, cls).__new__(cls)
@@ -3017,7 +3016,7 @@ class BitArray(Bits):
     def __copy__(self):
         """Return a new copy of the BitArray."""
         s_copy = BitArray()
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             # Let them both point to the same (invariant) array.
             # If either gets modified then at that point they'll be read into memory.
             s_copy._datastore = self._datastore
@@ -4074,8 +4073,9 @@ class BitStream(ConstBitStream, BitArray):
         """
         self._pos = 0
         # For mutable BitStreams we always read in files to memory:
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             self._ensureinmemory()
+        self._datastore.immutable = False
 
     def __new__(cls, auto=None, length=None, offset=None, **kwargs):
         x = super(BitStream, cls).__new__(cls)
@@ -4086,7 +4086,7 @@ class BitStream(ConstBitStream, BitArray):
         """Return a new copy of the BitStream."""
         s_copy = BitStream()
         s_copy._pos = 0
-        if not isinstance(self._datastore, ByteStore):
+        if self._datastore.immutable:
             # Let them both point to the same (invariant) array.
             # If either gets modified then at that point they'll be read into memory.
             s_copy._datastore = self._datastore
