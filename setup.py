@@ -23,9 +23,6 @@ ext = ".pyx" if use_cython else ".c"
 
 modulenames = ['_cbitstring', '_bytestore']
 ext_modules = [Extension(x, [x + ext], define_macros=macros) for x in modulenames]
-# ext_modules = [Extension('bitstring', ["bitstring.pyx"], define_macros=macros)]
-
-# TODO: define_macros
 
 if use_cython:
     print("Compiling with Cython")

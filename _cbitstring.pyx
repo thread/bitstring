@@ -16,7 +16,7 @@ import operator
 import collections
 import array
 
-from _bytestore import ByteStore, offsetcopy
+from _bytestore import ByteStore, offsetcopy, MmapByteArray
 
 byteorder = sys.byteorder
 
@@ -183,52 +183,6 @@ def equal(a, b):
     a_val >>= (8 - final_a_bits)
     a_val &= 0xff >> (8 - final_b_bits)
     return a_val == b_val
-
-
-class MmapByteArray(object):
-    """Looks like a bytearray, but from an mmap.
-
-    Not part of public interface.
-    """
-
-    __slots__ = ('filemap', 'filelength', 'source', 'byteoffset', 'bytelength')
-
-    def __init__(self, source, bytelength=None, byteoffset=None):
-        self.source = source
-        source.seek(0, os.SEEK_END)
-        self.filelength = source.tell()
-        if byteoffset is None:
-            byteoffset = 0
-        if bytelength is None:
-            bytelength = self.filelength - byteoffset
-        self.byteoffset = byteoffset
-        self.bytelength = bytelength
-        self.filemap = mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ)
-
-    def __getitem__(self, key):
-        try:
-            start = key.start
-            stop = key.stop
-        except AttributeError:
-            try:
-                assert 0 <= key < self.bytelength
-                return ord(self.filemap[key + self.byteoffset])
-            except TypeError:
-                # for Python 3
-                return self.filemap[key + self.byteoffset]
-        else:
-            if start is None:
-                start = 0
-            if stop is None:
-                stop = self.bytelength
-            assert key.step is None
-            assert 0 <= start < self.bytelength
-            assert 0 <= stop <= self.bytelength
-            s = slice(start + self.byteoffset, stop + self.byteoffset)
-            return bytearray(self.filemap.__getitem__(s))
-
-    def __len__(self):
-        return self.bytelength
 
 
 # This creates a dictionary for every possible byte with the value being
@@ -578,7 +532,6 @@ class Bits(object):
                     x._datastore = ByteStore(bytearray(0), 0, 0, True)
                     for token in tokens:
                         x._datastore._appendstore(Bits._init_with_token(*token)._datastore)
-                    assert x._assertsanity()
                     if len(_cache) < CACHE_SIZE:
                         _cache[auto] = x
                     return x
@@ -986,13 +939,6 @@ class Bits(object):
     # ...whereas this is used in Python 3.x
     __bool__ = __nonzero__
 
-    def _assertsanity(self):
-        """Check internal self consistency as a debugging aid."""
-        assert self.len >= 0
-        assert 0 <= self._offset, "offset={0}".format(self._offset)
-        assert (self.len + self._offset + 7) // 8 == self._datastore.bytelength + self._datastore.byteoffset
-        return True
-
     @classmethod
     def _init_with_token(cls, name, token_length, value):
         if token_length is not None:
@@ -1124,7 +1070,6 @@ class Bits(object):
     def _setbytes_unsafe(self, data, length, offset):
         """Unchecked version of _setbytes_safe."""
         self._datastore = ByteStore(data, length, offset)
-        assert self._assertsanity()
 
     def _readbytes(self, length, start):
         """Read bytes and return them. Note that length is in bits."""
@@ -1765,7 +1710,6 @@ class Bits(object):
                     b._datastore = offsetcopy(b._datastore, offset)
                     for token in tokens[1:]:
                         b._append(Bits._init_with_token(*token))
-                assert b._assertsanity()
                 assert b.len == 0 or b._offset == offset
                 if len(cache) < CACHE_SIZE:
                     cache[(bs, offset)] = b
@@ -1840,7 +1784,6 @@ class Bits(object):
         bytepos, offset = divmod(self._offset + bits, 8)
         self._setbytes_unsafe(self._datastore.getbyteslice(bytepos, self._datastore.bytelength), self.len - bits,
                               offset)
-        assert self._assertsanity()
 
     def _truncateend(self, bits):
         """Truncate bits from the end of the bitstring."""
@@ -1853,7 +1796,6 @@ class Bits(object):
         newlength_in_bytes = (self._offset + self.len - bits + 7) // 8
         self._setbytes_unsafe(self._datastore.getbyteslice(0, newlength_in_bytes), self.len - bits,
                               self._offset)
-        assert self._assertsanity()
 
     def _insert(self, bs, pos):
         """Insert bs at pos."""
@@ -1874,7 +1816,6 @@ class Bits(object):
             self._pos = pos + bs.len
         except AttributeError:
             pass
-        assert self._assertsanity()
 
     def _overwrite(self, bs, pos):
         """Overwrite with bs at pos."""
@@ -1907,7 +1848,6 @@ class Bits(object):
             self._datastore.setbyte(lastbytepos, self._datastore.getbyte(lastbytepos) & mask)
             self._datastore.setbyte(lastbytepos,
                                     self._datastore.getbyte(lastbytepos) | (d.getbyte(d.bytelength - 1) & ~mask))
-        assert self._assertsanity()
 
     def _delete(self, bits, pos):
         """Delete bits at pos."""
@@ -2349,7 +2289,6 @@ class Bits(object):
             nextchunk = self._slice(start, min(start + bits, end))
             if nextchunk.len != bits:
                 return
-            assert nextchunk._assertsanity()
             yield nextchunk
             start += bits
         return
@@ -3150,7 +3089,6 @@ class BitArray(Bits):
         except AttributeError:
             for p in positions:
                 self[p:p + old.len] = new
-        assert self._assertsanity()
         return len(lengths) - 1
 
     def insert(self, bs, pos=None):
@@ -3782,7 +3720,6 @@ class ConstBitStream(Bits):
         """
         skipped = (8 - (self._pos % 8)) % 8
         self.pos += self._offset + skipped
-        assert self._assertsanity()
         return skipped
 
     pos = property(_getbitpos, _setbitpos,

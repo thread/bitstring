@@ -2,6 +2,54 @@
 #cython: language_level=2, profile=True
 
 import copy
+import mmap
+import os
+
+class MmapByteArray(object):
+    """Looks like a bytearray, but from an mmap.
+
+    Not part of public interface.
+    """
+
+    __slots__ = ('filemap', 'filelength', 'source', 'byteoffset', 'bytelength')
+
+    def __init__(self, source, bytelength=None, byteoffset=None):
+        self.source = source
+        source.seek(0, os.SEEK_END)
+        self.filelength = source.tell()
+        if byteoffset is None:
+            byteoffset = 0
+        if bytelength is None:
+            bytelength = self.filelength - byteoffset
+        self.byteoffset = byteoffset
+        self.bytelength = bytelength
+        self.filemap = mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ)
+
+    def __getitem__(self, key):
+        try:
+            start = key.start
+            stop = key.stop
+        except AttributeError:
+            try:
+                assert 0 <= key < self.bytelength
+                return ord(self.filemap[key + self.byteoffset])
+            except TypeError:
+                # for Python 3
+                return self.filemap[key + self.byteoffset]
+        else:
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = self.bytelength
+            assert key.step is None
+            assert 0 <= start < self.bytelength
+            assert 0 <= stop <= self.bytelength
+            s = slice(start + self.byteoffset, stop + self.byteoffset)
+            return bytearray(self.filemap.__getitem__(s))
+
+    def __len__(self):
+        return self.bytelength
+
 
 class ByteStore:
     """Stores raw bytes together with a bit offset and length.
@@ -9,7 +57,9 @@ class ByteStore:
     Used internally - not part of public interface.
     """
 
-    __slots__ = ('offset', '_rawarray', 'bitlength', 'immutable')
+    # cdef public bytearray _rawarray
+    # cdef public int bitlength, offset
+    # cdef public bint immutable
 
     def __init__(self, data, bitlength=None, offset=None, immutable=False):
         """data is either a bytearray or a MmapByteArray"""
