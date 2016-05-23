@@ -1903,7 +1903,7 @@ class Split(unittest.TestCase):
                   ConstBitStream(filename='test.m1v', length=17),
                   ConstBitStream(filename='test.m1v', length=23, offset=23102)]:
             f2 = eval(f.__repr__())
-            self.assertEqual(f._datastore._rawarray.source.name, f2._datastore._rawarray.source.name)
+            self.assertEqual(f._datastore._rawarray.sourcename, f2._datastore._rawarray.sourcename)
             self.assertTrue(f2.tobytes() == f.tobytes())
         a = BitStream('0b1')
         self.assertEqual(repr(a), "BitStream('0b1')")

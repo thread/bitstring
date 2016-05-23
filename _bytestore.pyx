@@ -5,16 +5,17 @@ import copy
 import mmap
 import os
 
-class MmapByteArray(object):
+class MmapByteArray(bytearray):
     """Looks like a bytearray, but from an mmap.
 
     Not part of public interface.
     """
 
-    __slots__ = ('filemap', 'filelength', 'source', 'byteoffset', 'bytelength')
+    # cdef int filelength, byteoffset, bytelength
+    # cdef public object filemap
 
     def __init__(self, source, bytelength=None, byteoffset=None):
-        self.source = source
+        self.sourcename = source.name
         source.seek(0, os.SEEK_END)
         self.filelength = source.tell()
         if byteoffset is None:
@@ -51,15 +52,15 @@ class MmapByteArray(object):
         return self.bytelength
 
 
-class ByteStore:
+cdef class ByteStore:
     """Stores raw bytes together with a bit offset and length.
 
     Used internally - not part of public interface.
     """
 
-    # cdef public bytearray _rawarray
-    # cdef public int bitlength, offset
-    # cdef public bint immutable
+    cdef public object _rawarray
+    cdef public int bitlength, offset
+    cdef public bint immutable
 
     def __init__(self, data, bitlength=None, offset=None, immutable=False):
         """data is either a bytearray or a MmapByteArray"""
