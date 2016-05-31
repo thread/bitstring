@@ -348,10 +348,10 @@ class MmapByteArray(object):
     Not part of public interface.
     """
 
-    __slots__ = ('filemap', 'filelength', 'source', 'byteoffset', 'bytelength')
+    __slots__ = ('filemap', 'filelength', 'sourcename', 'byteoffset', 'bytelength')
 
     def __init__(self, source, bytelength=None, byteoffset=None):
-        self.source = source
+        self.sourcename = source.name
         source.seek(0, os.SEEK_END)
         self.filelength = source.tell()
         if byteoffset is None:
@@ -919,7 +919,7 @@ class Bits(object):
                 offsetstring = ", offset=%d" % (self._datastore._rawarray.byteoffset * 8 + self._offset)
             lengthstring = ", length=%d" % length
             return "{0}(filename='{1}'{2}{3})".format(self.__class__.__name__,
-                    self._datastore._rawarray.source.name, lengthstring, offsetstring)
+                    self._datastore._rawarray.sourcename, lengthstring, offsetstring)
         else:
             s = self.__str__()
             lengthstring = ''
