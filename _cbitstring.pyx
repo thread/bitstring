@@ -186,12 +186,8 @@ def equal(a, b):
 # This creates a dictionary for every possible byte with the value being
 # the key with its bits reversed.
 BYTE_REVERSAL_DICT = dict()
-
 for i in range(256):
     BYTE_REVERSAL_DICT[i] = bytes([int("{0:08b}".format(i)[::-1], 2)])
-
-# Python 2.x octals start with '0', in Python 3 it's '0o'
-LEADING_OCT_CHARS = len(oct(1)) - 1
 
 def tidy_input_string(s):
     """Return string made lowercase and with all whitespace removed."""
@@ -904,24 +900,16 @@ class Bits(object):
             shorter = self[:80] + self[-80:]
         h = 0
         for byte in shorter.tobytes():
-            try:
-                h = (h << 4) + ord(byte)
-            except TypeError:
-                # Python 3
-                h = (h << 4) + byte
+            h = (h << 4) + byte
             g = h & 0xf0000000
             if g & (1 << 31):
                 h ^= (g >> 24)
                 h ^= g
         return h % 1442968193
 
-    # This is only used in Python 2.x...
-    def __nonzero__(self):
+    def __bool__(self):
         """Return True if any bits are set to 1, otherwise return False."""
         return self.any(True)
-
-    # ...whereas this is used in Python 3.x
-    __bool__ = __nonzero__
 
     @classmethod
     def _init_with_token(cls, name, token_length, value):
@@ -1094,11 +1082,7 @@ class Bits(object):
         s = s.rstrip('L')
         if len(s) & 1:
             s = '0' + s
-        try:
-            data = bytes.fromhex(s)
-        except AttributeError:
-            # the Python 2.x way
-            data = binascii.unhexlify(s)
+        data = bytes.fromhex(s)
         # Now add bytes as needed to get the right length.
         extrabytes = ((length + 7) // 8) - len(data)
         if extrabytes > 0:
@@ -1604,8 +1588,8 @@ class Bits(object):
         if not length:
             return ''
         # Get main octal bit by converting from int.
-        # Strip starting 0 or 0o depending on Python version.
-        end = oct(self._readuint(length, start))[LEADING_OCT_CHARS:]
+        # Strip starting 0o
+        end = oct(self._readuint(length, start))[2:]
         if end.endswith('L'):
             end = end[:-1]
         middle = '0' * (length // 3 - len(end))
