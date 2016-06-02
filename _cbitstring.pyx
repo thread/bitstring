@@ -5,16 +5,15 @@ The Cython bitstring implementation
 """
 
 import numbers
-import copy
 import sys
 import re
 import binascii
-import mmap
 import os
 import struct
 import operator
 import collections
 import array
+from io import IOBase
 
 from _bytestore import ByteStore, offsetcopy, MmapByteArray
 
@@ -184,23 +183,12 @@ def equal(a, b):
     a_val &= 0xff >> (8 - final_b_bits)
     return a_val == b_val
 
-
 # This creates a dictionary for every possible byte with the value being
 # the key with its bits reversed.
 BYTE_REVERSAL_DICT = dict()
 
-# For Python 2.x/ 3.x coexistence
-# Yes this is very very hacky.
-try:
-    xrange
-    for i in range(256):
-        BYTE_REVERSAL_DICT[i] = chr(int("{0:08b}".format(i)[::-1], 2))
-except NameError:
-    for i in range(256):
-        BYTE_REVERSAL_DICT[i] = bytes([int("{0:08b}".format(i)[::-1], 2)])
-    from io import IOBase as file
-    xrange = range
-    basestring = str
+for i in range(256):
+    BYTE_REVERSAL_DICT[i] = bytes([int("{0:08b}".format(i)[::-1], 2)])
 
 # Python 2.x octals start with '0', in Python 3 it's '0o'
 LEADING_OCT_CHARS = len(oct(1)) - 1
@@ -412,10 +400,10 @@ def expand_brackets(s):
 
 
 # This converts a single octal digit to 3 bits.
-OCT_TO_BITS = ['{0:03b}'.format(i) for i in xrange(8)]
+OCT_TO_BITS = ['{0:03b}'.format(i) for i in range(8)]
 
 # A dictionary of number of 1 bits contained in binary representation of any byte
-BIT_COUNT = dict(zip(xrange(256), [bin(i).count('1') for i in xrange(256)]))
+BIT_COUNT = dict(zip(range(256), [bin(i).count('1') for i in range(256)]))
 
 
 class Bits(object):
@@ -989,7 +977,7 @@ class Bits(object):
                 length = s.len - offset
             self._setbytes_unsafe(s._datastore.rawbytes[:], length, s._offset + offset)
             return
-        if isinstance(s, file):
+        if isinstance(s, IOBase):
             if offset is None:
                 offset = 0
             if length is None:
@@ -1238,7 +1226,7 @@ class Bits(object):
                 val <<= 8 * chunksize
                 val += struct.unpack('<L', bytes(self._datastore.getbyteslice(endbyte + 1 - chunksize, endbyte + 1)))[0]
                 endbyte -= chunksize
-            for b in xrange(endbyte, startbyte - 1, -1):
+            for b in range(endbyte, startbyte - 1, -1):
                 val <<= 8
                 val += self._datastore.getbyte(b)
         else:
@@ -1571,7 +1559,7 @@ class Bits(object):
                            if len(binstring) < boundary else binstring
         try:
             bytelist = [int(padded_binstring[x:x + 8], 2)
-                        for x in xrange(0, len(padded_binstring), 8)]
+                        for x in range(0, len(padded_binstring), 8)]
         except ValueError:
             raise CreationError("Invalid character in bin initialiser {0}.", binstring)
         self._setbytes_unsafe(bytearray(bytelist), length, 0)
@@ -1636,11 +1624,7 @@ class Bits(object):
         if length % 2:
             hexstring += '0'
         try:
-            try:
-                data = bytearray.fromhex(hexstring)
-            except TypeError:
-                # Python 2.6 needs a unicode string (a bug). 2.7 and 3.x work fine.
-                data = bytearray.fromhex(unicode(hexstring))
+            data = bytearray.fromhex(hexstring)
         except ValueError:
             raise CreationError("Invalid symbol in hex initialiser.")
         self._setbytes_unsafe(data, length * 4, 0)
@@ -1652,13 +1636,7 @@ class Bits(object):
                                            "not multiple of 4 bits.")
         if not length:
             return ''
-        s = self._slice(start, start + length).tobytes()
-        try:
-            s = s.hex() # Available in Python 3.5
-        except AttributeError:
-            # This monstrosity is the only thing I could get to work for both 2.6 and 3.1.
-            # TODO: Is utf-8 really what we mean here?
-            s = str(binascii.hexlify(s).decode('utf-8'))
+        s = self._slice(start, start + length).tobytes().hex()
         # If there's one nibble too many then cut it off
         return s[:-1] if (length // 4) % 2 else s
 
@@ -1903,7 +1881,7 @@ class Bits(object):
         """Invert every bit."""
         set = self._datastore.setbyte
         get = self._datastore.getbyte
-        for p in xrange(self._datastore.byteoffset, self._datastore.byteoffset + self._datastore.bytelength):
+        for p in range(self._datastore.byteoffset, self._datastore.byteoffset + self._datastore.bytelength):
             set(p, 256 + ~get(p))
 
     def _ilshift(self, n):
@@ -1946,7 +1924,7 @@ class Bits(object):
                 self._datastore = offsetcopy(self._datastore, bs_bitoffset)
         a = self._datastore.rawbytes
         b = bs._datastore.rawbytes
-        for i in xrange(len(a)):
+        for i in range(len(a)):
             a[i] = f(a[i + self_byteoffset], b[i + bs_byteoffset])
         return self
 
@@ -2453,7 +2431,7 @@ class Bits(object):
         value = bool(value)
         length = self.len
         if pos is None:
-            pos = xrange(self.len)
+            pos = range(self.len)
         for p in pos:
             if p < 0:
                 p += length
@@ -2475,7 +2453,7 @@ class Bits(object):
         value = bool(value)
         length = self.len
         if pos is None:
-            pos = xrange(self.len)
+            pos = range(self.len)
         for p in pos:
             if p < 0:
                 p += length
@@ -2499,7 +2477,7 @@ class Bits(object):
             return 0
         # count the number of 1s (from which it's easy to work out the 0s).
         # Don't count the final byte yet.
-        count = sum(BIT_COUNT[self._datastore.getbyte(i)] for i in xrange(self._datastore.bytelength - 1))
+        count = sum(BIT_COUNT[self._datastore.getbyte(i)] for i in range(self._datastore.bytelength - 1))
         # adjust for bits at start that aren't part of the bitstring
         if self._offset:
             count -= BIT_COUNT[self._datastore.getbyte(0) >> (8 - self._offset)]
