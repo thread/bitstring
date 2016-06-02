@@ -1,7 +1,6 @@
 from _cbitstring import Bits, ReadError, ByteAlignError, tokenparser
 import numbers
 
-
 class ConstBitStream(Bits):
     """A container or stream holding an immutable sequence of bits.
 

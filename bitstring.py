@@ -63,21 +63,21 @@ __version__ = "3.2.0"
 
 __author__ = "Scott Griffiths"
 
-try:
-    from _cbitstring import *
-    from _cbitstream import BitStream, pack
-    from _cconstbitstream import ConstBitStream
+# try:
+from _cbitstring import *
+from _cbitstream import BitStream, pack
+from _cconstbitstream import ConstBitStream
+from _cbitarray import BitArray
+# Aliases for backward compatibility
+ConstBitArray = Bits
+BitString = BitStream
 
-    # Aliases for backward compatibility
-    ConstBitArray = Bits
-    BitString = BitStream
-
-    __pure__ = False
-except ImportError:
-    import sys
-    sys.exit(1)
-    from _pybitstring import *
-    __pure__ = True
+__pure__ = False
+# except ImportError:
+#     import sys
+#     sys.exit(1)
+#     from _pybitstring import *
+#     __pure__ = True
 
 __all__ = ['ConstBitArray', 'ConstBitStream', 'BitStream', 'BitArray',
            'Bits', 'BitString', 'pack', 'Error', 'ReadError',

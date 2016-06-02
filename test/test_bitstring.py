@@ -9,10 +9,10 @@ sys.path.insert(0, '..')
 import bitstring
 import copy
 
-try:
-    from _cbitstring import BYTE_REVERSAL_DICT
-except ImportError:
-    from _pybitstring import BYTE_REVERSAL_DICT
+# try:
+from _cbitstring import BYTE_REVERSAL_DICT
+# except ImportError:
+#     from _pybitstring import BYTE_REVERSAL_DICT
 
 
 class ModuleData(unittest.TestCase):

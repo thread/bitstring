@@ -1,4 +1,5 @@
-from _cbitstring import BitArray, CreationError, tokenparser
+from _cbitstring import CreationError, tokenparser
+from _cbitarray import BitArray
 from _cconstbitstream import ConstBitStream
 from _bytestore import ByteStore
 

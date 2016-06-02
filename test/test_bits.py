@@ -7,10 +7,10 @@ sys.path.insert(0, '..')
 import bitstring
 import array
 
-try:
-    from _cbitstring import MmapByteArray, ByteStore
-except ImportError:
-    from _pybitstring import MmapByteArray, ByteStore
+# try:
+from _cbitstring import MmapByteArray, ByteStore
+# except ImportError:
+#     from _pybitstring import MmapByteArray, ByteStore
 
 from bitstring import Bits, BitArray
 

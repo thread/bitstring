@@ -3,10 +3,10 @@
 import unittest
 import sys
 sys.path.insert(0, '..')
-try:
-    from _cbitstring import ByteStore, equal, offsetcopy
-except ImportError:
-    from _pybitstring import ByteStore, equal, offsetcopy
+# try:
+from _cbitstring import ByteStore, equal, offsetcopy
+# except ImportError:
+#     from _pybitstring import ByteStore, equal, offsetcopy
 
 
 class OffsetCopy(unittest.TestCase):

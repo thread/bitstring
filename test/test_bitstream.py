@@ -9,12 +9,13 @@ import os
 import collections
 
 from bitstring import BitStream, ConstBitStream, pack
-try:
-    from _cbitstring import ByteStore, offsetcopy, expand_brackets, MAX_CHARS, REPLACEMENTS_BE, REPLACEMENTS_LE, \
-        REPLACEMENTS_BE, PACK_CODE_SIZE, MmapByteArray, tokenparser
-except ImportError:
-    from _pybitstring import ByteStore, offsetcopy, expand_brackets, MAX_CHARS, REPLACEMENTS_BE, REPLACEMENTS_LE, \
-        REPLACEMENTS_BE, PACK_CODE_SIZE, MmapByteArray, tokenparser
+# try:
+from _cbitstring import ByteStore, offsetcopy, expand_brackets, MAX_CHARS, REPLACEMENTS_LE, \
+    REPLACEMENTS_BE, MmapByteArray, tokenparser
+from _cbitarray import PACK_CODE_SIZE
+# except ImportError:
+#     from _pybitstring import ByteStore, offsetcopy, expand_brackets, MAX_CHARS, REPLACEMENTS_BE, REPLACEMENTS_LE, \
+#         REPLACEMENTS_BE, PACK_CODE_SIZE, MmapByteArray, tokenparser
 
 
 class FlexibleInitialisation(unittest.TestCase):
