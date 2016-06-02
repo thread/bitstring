@@ -73,12 +73,13 @@ cdef class ByteStore:
         self.bitlength = bitlength
         self.immutable = immutable
 
-    def getbit(self, pos):
+    cpdef getbit(self, int pos):
+        cdef int byte, bit
         assert 0 <= pos < self.bitlength
         byte, bit = divmod(self.offset + pos, 8)
         return bool(self._rawarray[byte] & (128 >> bit))
 
-    def getbyte(self, pos):
+    cpdef getbyte(self, int pos):
         """Direct access to byte data."""
         return self._rawarray[pos]
 
@@ -89,6 +90,7 @@ cdef class ByteStore:
 
     @property
     def bytelength(self):
+        cdef int sb, eb
         if not self.bitlength:
             return 0
         sb = self.offset // 8
@@ -143,25 +145,25 @@ cdef class ByteStore:
     def rawbytes(self):
         return self._rawarray
 
-    def setbit(self, pos):
+    cpdef setbit(self, int pos):
         assert 0 <= pos < self.bitlength
         assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] |= (128 >> bit)
 
-    def unsetbit(self, pos):
+    cpdef unsetbit(self, int pos):
         assert 0 <= pos < self.bitlength
         assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] &= ~(128 >> bit)
 
-    def invertbit(self, pos):
+    cpdef invertbit(self, int pos):
         assert 0 <= pos < self.bitlength
         assert self.immutable is False
         byte, bit = divmod(self.offset + pos, 8)
         self._rawarray[byte] ^= (128 >> bit)
 
-    def setbyte(self, pos, value):
+    cpdef setbyte(self, int pos, int value):
         assert self.immutable is False
         self._rawarray[pos] = value
 
@@ -169,7 +171,7 @@ cdef class ByteStore:
         self._rawarray[start:end] = value
 
 
-def offsetcopy(s, newoffset):
+cpdef offsetcopy(ByteStore s, int newoffset):
     """Return a copy of a ByteStore with the newoffset.
 
     Not part of public interface.
@@ -210,3 +212,107 @@ def offsetcopy(s, newoffset):
         assert new_s.offset == newoffset
         return new_s
 
+cpdef equal(ByteStore a, ByteStore b):
+    """Return True if ByteStores a == b.
+
+    Not part of public interface.
+    """
+    cdef int a_bitlength, b_bitlength, a_bitoff, b_bitoff, a_byteoffset, b_byteoffset, a_bytelength, b_bytelength
+    cdef int bits_spare_in_last_byte, a_val, b_val, shift, final_b_bits, final_a_bits
+    # We want to return False for inequality as soon as possible, which
+    # means we get lots of special cases.
+    # First the easy one - compare lengths:
+    a_bitlength = a.bitlength
+    b_bitlength = b.bitlength
+    if a_bitlength != b_bitlength:
+        return False
+    if not a_bitlength:
+        assert b_bitlength == 0
+        return True
+    # Make 'a' the one with the smaller offset
+    if (a.offset % 8) > (b.offset % 8):
+        a, b = b, a
+    # and create some aliases
+    a_bitoff = a.offset % 8
+    b_bitoff = b.offset % 8
+    a_byteoffset = a.byteoffset
+    b_byteoffset = b.byteoffset
+    a_bytelength = a.bytelength
+    b_bytelength = b.bytelength
+    da = a._rawarray
+    db = b._rawarray
+
+    # If they are pointing to the same data, they must be equal
+    if da is db and a.offset == b.offset:
+        return True
+
+    if a_bitoff == b_bitoff:
+        bits_spare_in_last_byte = 8 - (a_bitoff + a_bitlength) % 8
+        if bits_spare_in_last_byte == 8:
+            bits_spare_in_last_byte = 0
+        # Special case for a, b contained in a single byte
+        if a_bytelength == 1:
+            a_val = ((da[a_byteoffset] << a_bitoff) & 0xff) >> (8 - a_bitlength)
+            b_val = ((db[b_byteoffset] << b_bitoff) & 0xff) >> (8 - b_bitlength)
+            return a_val == b_val
+        # Otherwise check first byte
+        if da[a_byteoffset] & (0xff >> a_bitoff) != db[b_byteoffset] & (0xff >> b_bitoff):
+            return False
+        # then everything up to the last
+        b_a_offset = b_byteoffset - a_byteoffset
+        for x in range(1 + a_byteoffset, a_byteoffset + a_bytelength - 1):
+            if da[x] != db[b_a_offset + x]:
+                return False
+        # and finally the last byte
+        return (da[a_byteoffset + a_bytelength - 1] >> bits_spare_in_last_byte ==
+                db[b_byteoffset + b_bytelength - 1] >> bits_spare_in_last_byte)
+
+    assert a_bitoff != b_bitoff
+    # This is how much we need to shift a to the right to compare with b:
+    shift = b_bitoff - a_bitoff
+    # Special case for b only one byte long
+    if b_bytelength == 1:
+        assert a_bytelength == 1
+        a_val = ((da[a_byteoffset] << a_bitoff) & 0xff) >> (8 - a_bitlength)
+        b_val = ((db[b_byteoffset] << b_bitoff) & 0xff) >> (8 - b_bitlength)
+        return a_val == b_val
+    # Special case for a only one byte long
+    if a_bytelength == 1:
+        assert b_bytelength == 2
+        a_val = ((da[a_byteoffset] << a_bitoff) & 0xff) >> (8 - a_bitlength)
+        b_val = ((db[b_byteoffset] << 8) + db[b_byteoffset + 1]) << b_bitoff
+        b_val &= 0xffff
+        b_val >>= 16 - b_bitlength
+        return a_val == b_val
+
+    # Compare first byte of b with bits from first byte of a
+    if (da[a_byteoffset] & (0xff >> a_bitoff)) >> shift != db[b_byteoffset] & (0xff >> b_bitoff):
+        return False
+    # Now compare every full byte of b with bits from 2 bytes of a
+    for x in range(1, b_bytelength - 1):
+        # Construct byte from 2 bytes in a to compare to byte in b
+        b_val = db[b_byteoffset + x]
+        a_val = ((da[a_byteoffset + x - 1] << 8) + da[a_byteoffset + x]) >> shift
+        a_val &= 0xff
+        if a_val != b_val:
+            return False
+
+    # Now check bits in final byte of b
+    final_b_bits = (b.offset + b_bitlength) % 8
+    if not final_b_bits:
+        final_b_bits = 8
+    b_val = db[b_byteoffset + b_bytelength - 1] >> (8 - final_b_bits)
+    final_a_bits = (a.offset + a_bitlength) % 8
+    if not final_a_bits:
+        final_a_bits = 8
+    if b.bytelength > a_bytelength:
+        assert b_bytelength == a_bytelength + 1
+        a_val = da[a_byteoffset + a_bytelength - 1] >> (8 - final_a_bits)
+        a_val &= 0xff >> (8 - final_b_bits)
+        return a_val == b_val
+    assert a_bytelength == b_bytelength
+    a_val = da[a_byteoffset + a_bytelength - 2] << 8
+    a_val += da[a_byteoffset + a_bytelength - 1]
+    a_val >>= (8 - final_a_bits)
+    a_val &= 0xff >> (8 - final_b_bits)
+    return a_val == b_val
