@@ -66,6 +66,7 @@ __author__ = "Scott Griffiths"
 try:
     from _cbitstring import *
     from _cbitstream import BitStream, pack
+    from _cconstbitstream import ConstBitStream
 
     # Aliases for backward compatibility
     ConstBitArray = Bits
@@ -73,6 +74,8 @@ try:
 
     __pure__ = False
 except ImportError:
+    import sys
+    sys.exit(1)
     from _pybitstring import *
     __pure__ = True
 
