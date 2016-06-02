@@ -38,3 +38,7 @@ class Equals(unittest.TestCase):
         t = ByteStore(bytearray([64]), 2, 1)
         self.assertTrue(equal(s, t))
         self.assertTrue(equal(t, s))
+
+
+if __name__ == '__main__':
+    unittest.main()

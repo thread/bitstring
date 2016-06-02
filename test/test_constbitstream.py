@@ -119,3 +119,5 @@ class ReadingBytes(unittest.TestCase):
         t = s.unpack('pad:a, bytes:b, bytes, pad:a', a=4, b=6)
         self.assertEqual(t, [b'\x55'*6, b'\x55'*3])
 
+if __name__ == '__main__':
+    unittest.main()

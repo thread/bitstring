@@ -310,3 +310,6 @@ class ModifiedByAddingBug(unittest.TestCase):
         self.assertEqual(c, '0b011')
         self.assertEqual(a, '0b0')
         self.assertEqual(b, '0b11')
+
+if __name__ == '__main__':
+    unittest.main()

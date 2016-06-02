@@ -96,7 +96,15 @@ class Interning(unittest.TestCase):
         b = bitstring.ConstBitStream('0b11000')
         self.assertFalse(a is b)
     #        self.assertTrue(a._datastore is b._datastore)
+
+class PurePython(unittest.TestCase):
+    def testIsPure(self):
+        self.assertTrue(bitstring.__pure__)
+
+
+class Cython(unittest.TestCase):
+    def testIsCython(self):
+        self.assertFalse(bitstring.__pure__)
         
-        
-        
-        
+if __name__ == '__main__':
+    unittest.main()

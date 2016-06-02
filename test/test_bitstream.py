@@ -3945,3 +3945,7 @@ class BytesProblems(unittest.TestCase):
     def testBinProperty(self):
         b = BitStream(bytes=b'\x00\xaa', offset=8, length=4)
         self.assertEqual(b.bin, '1010')
+
+
+if __name__ == '__main__':
+    unittest.main()
