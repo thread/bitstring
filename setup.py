@@ -21,7 +21,7 @@ macros = [('PYREX_WITHOUT_ASSERTIONS', None)]
 
 ext = ".pyx" if use_cython else ".c"
 
-modulenames = ['_cbitstring', '_bytestore']
+modulenames = ['_cbitstring', '_bytestore', '_cbitstream']
 ext_modules = [Extension(x, [x + ext], define_macros=macros) for x in modulenames]
 
 if use_cython:

@@ -65,6 +65,12 @@ __author__ = "Scott Griffiths"
 
 try:
     from _cbitstring import *
+    from _cbitstream import BitStream, pack
+
+    # Aliases for backward compatibility
+    ConstBitArray = Bits
+    BitString = BitStream
+
     __pure__ = False
 except ImportError:
     from _pybitstring import *
