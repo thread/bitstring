@@ -1,5 +1,14 @@
-.. image:: https://travis-ci.org/scott-griffiths/bitstring.svg?branch=master
-    :target: https://travis-ci.org/scott-griffiths/bitstring
+.. image:: https://travis-ci.org/thread/bitstring.svg?branch=master
+    :target: https://travis-ci.org/thread/bitstring
+
+Thread fork
+-----------
+
+This library has been forked for [Thread](https://github.com/thread) use.
+
+It's on PyPI as thread-bitstring, and can be re-pulished with::
+
+    python setup.py sdist bdist_wheel upload
 
 ================
 bitstring module
@@ -43,7 +52,7 @@ If you haven't yet downloaded the package then you can just try::
 
 or ::
 
-     pip install bitstring     
+     pip install bitstring
 
 
 Simple Examples

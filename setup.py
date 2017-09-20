@@ -10,7 +10,7 @@ if sys.version_info[:2] < (2, 6):
     raise Exception('This version of bitstring needs Python 2.6 or later. '
                     'For Python 2.4 / 2.5 please use bitstring version 1.0 instead.')
 
-setup(name='bitstring',
+setup(name='thread-bitstring',
       version='3.1.5',
       description='Simple construction, analysis and modification of binary data.',
       author='Scott Griffiths',
