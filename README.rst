@@ -4,7 +4,7 @@
 Thread fork
 -----------
 
-This library has been forked for [Thread](https://github.com/thread) use.
+This library has been forked for `Thread <https://github.com/thread>`__ use.
 
 It's on PyPI as thread-bitstring, and can be re-pulished with::
 
